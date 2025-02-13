@@ -1,76 +1,92 @@
 #include "Camera.h"
 
-Camera::Camera(int width,
-    int height,
-    glm::vec3 position,
-    glm::vec3 orientation,
-    glm::vec3 up,
-    float speed,
-    float sensitivity,
-    float yaw,
-    float pitch,
-    bool firstClick) :
-    position(position), orientation(orientation), up(up), width(width), height(height), speed(speed), sensitivity(sensitivity), yaw(yaw), pitch(pitch), firstClick(firstClick)
-    {
-        lastX = width / 2.0f;
-        lastY = height / 2.0f;
+#include "Camera.h"
+#include <algorithm>
+
+Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
+    : _position(position),
+      _worldUp(up),
+      _yaw(yaw),
+      _pitch(pitch),
+      _front(glm::vec3(0.0f, 0.0f, -1.0f)),
+      _movementSpeed(0.1f),
+      _mouseSensitivity(0.01f),
+      _fov(45.0f),
+      _fpsMode(false)
+{
+    updateCameraVectors();
+}
+
+glm::mat4 Camera::getViewMatrix() const {
+    return glm::lookAt(_position, _position + _front, _up);
+}
+
+glm::mat4 Camera::getProjectionMatrix(float aspectRatio) const {
+    return glm::perspective(glm::radians(_fov), aspectRatio, 0.1f, 100.0f);
+}
+
+void Camera::processKeyboardInput(Camera_Movement direction, float deltaTime) {
+    float velocity = _movementSpeed * deltaTime;
+    
+    switch(direction) {
+        case FORWARD:
+            _position += _front * velocity;
+            break;
+        case BACKWARD:
+            _position -= _front * velocity;
+            break;
+        case LEFT:
+            _position -= _right * velocity;
+            break;
+        case RIGHT:
+            _position += _right * velocity;
+            break;
+        case UP:
+            _position += _worldUp * velocity;
+            break;
+        case DOWN:
+            _position -= _worldUp * velocity;
+            break;
     }
-
-void Camera::updateMatrix(float fov, float nearPlane, float farPlane) {
-    viewMatrix = glm::lookAt(position, position + orientation, up);
-    projectionMatrix = glm::perspective(glm::radians(fov), (float)width / (float)height, nearPlane, farPlane);
 }
 
-void Camera::setMatrix(ShaderProgram &shaderProgram, const char *uniform) {
-    shaderProgram.use();
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgram.getId(), uniform), 1, GL_FALSE, glm::value_ptr(projectionMatrix * viewMatrix));
-}
+void Camera::processMouseInput(float xoffset, float yoffset, bool constrainPitch) {
+    xoffset *= _mouseSensitivity;
+    yoffset *= _mouseSensitivity;
 
-void Camera::processInputs(GLFWwindow* window) {
-    float deltaTime = 0.0f;
-    float currentTime = glfwGetTime();
-    float lastTime = 0.0f;
-    deltaTime = currentTime - lastTime;
-    lastTime = currentTime;
+    _yaw += xoffset;
+    _pitch += yoffset;
 
-    float cameraSpeed = speed * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
-        position += cameraSpeed * orientation;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        position -= cameraSpeed * orientation;
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        position -= glm::normalize(glm::cross(orientation, up)) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        position += glm::normalize(glm::cross(orientation, up)) * cameraSpeed;
-}
-
-void Camera::mouseMouvement(float xpos, float ypos) {
-    if (firstClick) {
-        lastX = width / 2.0f;
-        lastY = height / 2.0f;
-        firstClick = false;
+    if (constrainPitch) {
+        if (_pitch > 89.0f) {
+            _pitch = 89.0f;
+        }
+        if (_pitch < -89.0f) {
+            _pitch = -89.0f;
+        }
     }
+    updateCameraVectors();
+}
 
-    float xOffset, yOffset;
-    xOffset = xpos - lastX;
-    yOffset = lastY - ypos;
-    lastX = xpos;
-    lastY = ypos;
+void Camera::processMouseScroll(float yoffset) {
+    _fov -= yoffset;
+    if (_fov < 1.0f) {
+        _fov = 1.0f;
+    }
+    if (_fov > 45.0f) {
+        _fov = 45.0f;
+    }
+}
 
-    xOffset *= sensitivity;
-    yOffset *= sensitivity;
-
-    yaw += xOffset;
-    pitch += yOffset;
-
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
-
+void Camera::updateCameraVectors() {
+    // Calculate the new front vector
     glm::vec3 front;
-    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    front.y = sin(glm::radians(pitch));
-    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    orientation = glm::normalize(front);
+    front.x = cos(glm::radians(_yaw)) * cos(glm::radians(_pitch));
+    front.y = sin(glm::radians(_pitch));
+    front.z = sin(glm::radians(_yaw)) * cos(glm::radians(_pitch));
+    _front = glm::normalize(front);
+    
+    // Recalculate the right and up vectors
+    _right = glm::normalize(glm::cross(_front, _worldUp));
+    _up = glm::normalize(glm::cross(_right, _front));
 }

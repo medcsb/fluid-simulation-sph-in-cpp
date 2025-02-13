@@ -45,7 +45,6 @@ void ShaderProgram::loadShader(GLenum type, const char *shaderSource) {
       glDeleteShader(shader);
     }
     glAttachShader(_id, shader);
-    glDeleteShader(shader);
 }
 
 std::shared_ptr<ShaderProgram> ShaderProgram::genBasicShaderProgram(
@@ -55,7 +54,13 @@ std::shared_ptr<ShaderProgram> ShaderProgram::genBasicShaderProgram(
   shaderProgramPtr->loadShaderFromFile(GL_VERTEX_SHADER, vertexShaderFilename);
   shaderProgramPtr->loadShaderFromFile(GL_FRAGMENT_SHADER, fragmentShaderFilename);
   shaderProgramPtr->link();
-  shaderProgramPtr->use();
+  GLint success;
+  glGetProgramiv(shaderProgramPtr->getId(), GL_LINK_STATUS, &success);
+  if (!success) {
+    GLchar infoLog[512];
+    glGetProgramInfoLog(shaderProgramPtr->getId(), 512, NULL, infoLog);
+    exitOnCriticalError("ERROR::SHADER::PROGRAM::LINKING_FAILED\n" + std::string(infoLog), "genBasicShaderProgram");
+  }
   return shaderProgramPtr;
 }
 
@@ -66,6 +71,12 @@ std::shared_ptr<ShaderProgram> ShaderProgram::genBasicShaderProgramFromSource(
   shaderProgramPtr->loadShaderFromSource(GL_VERTEX_SHADER, vertexShaderSource);
   shaderProgramPtr->loadShaderFromSource(GL_FRAGMENT_SHADER, fragmentShaderSource);
   shaderProgramPtr->link();
-  shaderProgramPtr->use();
+  GLint success;
+  glGetProgramiv(shaderProgramPtr->getId(), GL_LINK_STATUS, &success);
+  if (!success) {
+    GLchar infoLog[512];
+    glGetProgramInfoLog(shaderProgramPtr->getId(), 512, NULL, infoLog);
+    exitOnCriticalError("ERROR::SHADER::PROGRAM::LINKING_FAILED\n" + std::string(infoLog), "genBasicShaderProgramFromSource");
+  }
   return shaderProgramPtr;
 }

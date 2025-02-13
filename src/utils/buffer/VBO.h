@@ -8,13 +8,11 @@
 
 struct Vertex {
     glm::vec3 position;
-    glm::vec4 color;
-    glm::vec3 normal;
+    glm::vec3 color;
 
-    Vertex(glm::vec3 position, glm::vec4 color, glm::vec3 normal) :
+    Vertex(glm::vec3 position, glm::vec3 color) :
         position(position),
-        color(color),
-        normal(normal) {}
+        color(color) {}
     // default constructor
     Vertex() {}
 };
@@ -22,14 +20,11 @@ struct Vertex {
 class VBO {
 
 public:
-    VBO() {};
-    VBO(GLfloat* vertices, GLsizeiptr size, GLenum usage = GL_STATIC_DRAW);
-    VBO(std::vector<GLfloat> vertices, GLenum usage = GL_STATIC_DRAW);
-    VBO(std::vector<glm::vec3> vertices, GLenum usage = GL_STATIC_DRAW);
-    VBO(std::vector<Vertex> vertices, GLenum usage = GL_STATIC_DRAW);
+    VBO();
     ~VBO();
 
     void bind();
+    void setBuffer(std::vector<Vertex> vertices, GLenum usage = GL_STATIC_DRAW);
     void unbind();
 
 private:

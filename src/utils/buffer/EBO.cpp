@@ -1,21 +1,19 @@
 #include "EBO.h"
 
-EBO::EBO(GLuint* indices, GLsizeiptr size, GLenum usage) {
+EBO::EBO() {
     glGenBuffers(1, &_id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indices, usage);
 }
 
-EBO::EBO(std::vector<GLuint> indices, GLenum usage) {
-    glGenBuffers(1, &_id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id);
+void EBO::setBuffer(std::vector<glm::uvec3> indices, GLenum usage) {
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(glm::uvec3), indices.data(), usage);
+}
+
+void EBO::setBuffer(std::vector<GLuint> indices, GLenum usage) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), usage);
 }
 
-EBO::EBO(std::vector<glm::uvec3> indices, GLenum usage) {
-    glGenBuffers(1, &_id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(glm::uvec3), indices.data(), usage);
+void EBO::setBuffer(std::vector<GLint> indices, GLenum usage) {
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLint), indices.data(), usage);
 }
 
 void EBO::bind() {
@@ -27,5 +25,5 @@ void EBO::unbind() {
 }
 
 EBO::~EBO() {
-    glDeleteBuffers(1, &_id);
+    //glDeleteBuffers(1, &_id);
 }

@@ -11,14 +11,13 @@
 class EBO {
 
 public:
-    EBO() {};
-    EBO(GLuint* indices, GLsizeiptr size, GLenum usage = GL_STATIC_DRAW);
-    EBO(std::vector<GLuint> indices, GLenum usage = GL_STATIC_DRAW);
-    EBO(std::vector<glm::uvec3> indices, GLenum usage = GL_STATIC_DRAW);
-    EBO(std::vector<Vertex> vertices, GLenum usage = GL_STATIC_DRAW);
+    EBO();
     ~EBO();
 
     void bind();
+    void setBuffer(std::vector<glm::uvec3> indices, GLenum usage = GL_STATIC_DRAW);
+    void setBuffer(std::vector<GLuint> indices, GLenum usage = GL_STATIC_DRAW);
+    void setBuffer(std::vector<GLint> indices, GLenum usage = GL_STATIC_DRAW);
     void unbind();
 
 private:

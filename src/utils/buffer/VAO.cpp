@@ -5,10 +5,8 @@ VAO::VAO() {
 }
 
 void VAO::linkAttrib(VBO& VBO, GLuint layout, GLuint numComponents, GLenum type, GLboolean normalized, GLsizei stride, void* offset) {
-    VBO.bind();
     glVertexAttribPointer(layout, numComponents, type, normalized, stride, offset);
     glEnableVertexAttribArray(layout);
-    VBO.unbind();
 }
 
 void VAO::bind() {
@@ -20,6 +18,6 @@ void VAO::unbind() {
 }
 
 VAO::~VAO() {
-    glDeleteVertexArrays(1, &_id);
+    //glDeleteVertexArrays(1, &_id);
 }
 
