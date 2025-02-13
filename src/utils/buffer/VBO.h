@@ -9,10 +9,12 @@
 struct Vertex {
     glm::vec3 position;
     glm::vec3 color;
+    glm::vec3 normal;
 
-    Vertex(glm::vec3 position, glm::vec3 color) :
+    Vertex(glm::vec3 position, glm::vec3 color, glm::vec3 normal) :
         position(position),
-        color(color) {}
+        color(color),
+        normal(normal) {}
     // default constructor
     Vertex() {}
 };

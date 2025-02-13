@@ -8,6 +8,7 @@
 #include "utils/buffer/VBO.h"
 #include "utils/buffer/EBO.h"
 #include "mesh.h"
+#include "sphSolver.h"
 
 #include <iostream>
 #include <memory>
@@ -61,20 +62,13 @@ GLFWwindow* initGLFWContext() {
 int main() {
     GLFWwindow* window = initGLFWContext();
     std::shared_ptr<ShaderProgram> shaderProgram = ShaderProgram::genBasicShaderProgram("../src/shaders/vertexShader.glsl", "../src/shaders/fragmentShader.glsl");
-    std::vector<Vertex> vertices = {
-        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
-        Vertex(glm::vec3(0.5f, -0.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)),
-        Vertex(glm::vec3(0.0f, 0.5f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f))
-    };
-    
-    std::vector<glm::uvec3> indices = {
-        glm::uvec3(0, 1, 2)
-    };
-    Mesh mesh(vertices, indices, shaderProgram);
+    Particle particle(shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), 0);
+    RigidPlane plane(shaderProgram, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 1.0f);
 
     glEnable(GL_DEPTH_TEST);
 
     glm::mat4 model = glm::mat4(1.0f);
+    glm::vec3 lightPos(0.0f, 2.0f, 1.0f);
     
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -83,10 +77,11 @@ int main() {
         shaderProgram->use();
         glm::mat4 view = camera.getViewMatrix();
         glm::mat4 projection = camera.getProjectionMatrix((float)SCR_WIDTH / (float)SCR_HEIGHT);
-        shaderProgram->setMat4("model", model);
         shaderProgram->setMat4("view", view);
+        shaderProgram->setVec3("lightPos", lightPos);
         shaderProgram->setMat4("projection", projection);
-        mesh.render();
+        plane.render();
+        particle.render(0.1f);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }

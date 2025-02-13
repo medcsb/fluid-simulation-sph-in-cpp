@@ -9,8 +9,8 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
       _yaw(yaw),
       _pitch(pitch),
       _front(glm::vec3(0.0f, 0.0f, -1.0f)),
-      _movementSpeed(0.1f),
-      _mouseSensitivity(0.01f),
+      _movementSpeed(0.01f),
+      _mouseSensitivity(0.001f),
       _fov(45.0f),
       _fpsMode(false)
 {
