@@ -2,34 +2,6 @@
 
 #include <iostream>
 
-Mesh::Mesh(std::vector<glm::vec3> vertexPositions, 
-    std::vector<glm::vec3> vertexColors,
-    std::vector<glm::uvec3> triangleIndices,
-    std::shared_ptr<ShaderProgram> shaderProgram) :
-    _vertexPositions(vertexPositions),
-    _vertexColors(vertexColors),
-    _triangleIndices(triangleIndices),
-    _shaderProgram(shaderProgram) {
-    for (size_t i = 0; i < vertexPositions.size(); i++) {
-        Vertex vertex;
-        vertex.position = vertexPositions[i];
-        vertex.color = vertexColors[i];
-        _vertices.push_back(vertex);
-    }
-    _vao = VAO();
-    _vao.bind();
-    
-    _vbo = VBO();
-    _vbo.bind();
-    _vbo.setBuffer(_vertices);
-    
-    _ebo = EBO();
-    _ebo.bind();
-    _ebo.setBuffer(triangleIndices);
-    
-    init(_vertices);
-}
-
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<glm::uvec3> triangleIndices, std::shared_ptr<ShaderProgram> shaderProgram) :
     _vertices(vertices),
     _triangleIndices(triangleIndices),
@@ -63,7 +35,7 @@ Mesh::Mesh(MeshType meshType, std::shared_ptr<ShaderProgram> shaderProgram) :
         _modelMatrix = glm::mat4(1.0);
     }
 
-void Mesh::makeCube(glm::vec3 position, glm::vec3 color, float size) {
+void Mesh::makeCube(glm::vec3 position, glm::vec4 color, float size) {
     _vertexPositions = {
         glm::vec3(-size / 2, -size / 2, size / 2) + position,
         glm::vec3(size / 2, -size / 2, size / 2) + position,
@@ -123,7 +95,7 @@ void Mesh::makeCube(glm::vec3 position, glm::vec3 color, float size) {
     init(_vertices);
 }
 
-void Mesh::makeSphere(glm::vec3 position, glm::vec3 color, float radius, int sectorCount, int stackCount) {
+void Mesh::makeSphere(glm::vec4 color, float radius, int sectorCount, int stackCount) {
     for (int i = 0; i <= stackCount; ++i) {
         float stackAngle = glm::pi<float>() / 2 - (i * glm::pi<float>() / stackCount);
         float xy = radius * cos(stackAngle);
@@ -162,13 +134,12 @@ void Mesh::makeSphere(glm::vec3 position, glm::vec3 color, float radius, int sec
     init(_vertices);
 }
 
-void Mesh::makePlane(glm::vec3 position, glm::vec3 u, glm::vec3 v, glm::vec3 color, float size) {
+void Mesh::makePlane(glm::vec3 u, glm::vec3 v, glm::vec4 color, float size) {
     // k = sqrt((sqrt(size)) / 2 * (u.x * v.x + u.y * v.y + u.z * v.z))
-    float k = sqrt((sqrt(size) / 2) * ((u.x + v.x)*(u.x + v.x) + (u.y + v.y)*(u.y + v.y) + (u.z + v.z)*(u.z + v.z)));
-    glm::vec3 a = position + k * u + k * v;
-    glm::vec3 b = position + k * u - k * v;
-    glm::vec3 c = position - k * u - k * v;
-    glm::vec3 d = position - k * u + k * v;
+    glm::vec3 a = size * u + size * v;
+    glm::vec3 b = size * u - size * v;
+    glm::vec3 c = - size * u - size * v;
+    glm::vec3 d = - size * u + size * v;
 
     glm::vec3 normal = glm::normalize(glm::cross(b - a, d - a));
 
@@ -188,10 +159,6 @@ void Mesh::makePlane(glm::vec3 position, glm::vec3 u, glm::vec3 v, glm::vec3 col
     _ebo.setBuffer(_triangleIndices);
 
     init(_vertices);
-
-    _modelMatrix = glm::mat4(1.0);
-
-    updateModelMatrix(position);
 }
 
 
@@ -201,7 +168,7 @@ void Mesh::init(std::vector<Vertex> vertices) {
     //param 2 : 1 vertex has 3 floats
     //param 6 : u need to skip a vertex worth of data to reach the next position related data
     //param 7 : offset of the data in the vertex struct (how many bytes from the start of the struct)
-    _vao.linkAttrib(_vbo, 1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, color)); //
+    _vao.linkAttrib(_vbo, 1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, color)); //
     _vao.linkAttrib(_vbo, 2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, normal)); // 
 
     _vbo.unbind();

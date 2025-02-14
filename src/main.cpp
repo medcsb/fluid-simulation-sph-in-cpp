@@ -13,9 +13,11 @@
 #include <iostream>
 #include <memory>
 
-bool paused = false;
+bool paused = true;
+bool spawnParticles = false;
 bool pKeyPressed = false;
 bool fKeyPressed = false;
+bool tabKeyPressed = false;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -68,26 +70,24 @@ int main() {
     std::shared_ptr<ShaderProgram> shaderProgram = ShaderProgram::genBasicShaderProgram("../src/shaders/vertexShader.glsl", "../src/shaders/fragmentShader.glsl");
     // create 9x9x9 cube of particles
     std::vector<Particle> particles;
-    for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
-            for (int k = 0; k < 9; k++) {
-                Particle particle(shaderProgram, glm::vec3(i * 0.2f, j * 0.2f + 1, k * 0.2f), 0.1f, i * 81 + j * 9 + k);
-                if (i%2 == 0) {
-                    Particle particle(shaderProgram, glm::vec3(i * 0.6f, j * 0.2f + 1, k * 0.2f), 0.1f, i * 81 + j * 9 + k);
-                } else {
-                    Particle particle(shaderProgram, glm::vec3(i * 0.2f, j * 0.2f + 1, k * 0.2f), 0.1f, i * 81 + j * 9 + k);
-                }
-                particles.push_back(particle);
-            }
-        }
-    }
-    Particle particle(shaderProgram, glm::vec3(1.0f, 4.0f, 0.0f), 0.1f, 0);
-    particles.push_back(particle);
+    Particle particle1(shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), 0.1f, 0);
+    Particle particle2(shaderProgram, glm::vec3(0.0f, 1.0f, -1.0f), 0.1f, 0);
+    Particle particle3(shaderProgram, glm::vec3(2.0f, 1.0f, 0.0f), 0.1f, 0);
+    Particle particle4(shaderProgram, glm::vec3(-2.0f, 1.0f, 0.0f), 0.1f, 0);
+    Particle particle5(shaderProgram, glm::vec3(2.0f, 0.0f, -1.0f), 0.1f, 0);
+    particles.push_back(particle1);
+    particles.push_back(particle2);
+    particles.push_back(particle3);
+    particles.push_back(particle4);
+    particles.push_back(particle5);
     SPHSolver sphSolver(&particles, shaderProgram);
     Mesh mesh(MeshType::CUBE, shaderProgram);
+    mesh.makeCube(glm::vec3(2.0f, 0.0f, -1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.1f);
 
 
     glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
     glm::mat4 model = glm::mat4(1.0f);
     glm::vec3 lightPos(0.0f, 2.0f, 1.0f);
@@ -107,10 +107,14 @@ int main() {
         } else {
             sphSolver.unpause();
         }
+        if (spawnParticles){
+            sphSolver.spawnParticles();
+        }
         sphSolver.update(0.01f);
-        mesh.render();
+        //mesh.render();
         glfwSwapBuffers(window);
         glfwPollEvents();
+        spawnParticles = false;
     }
     glfwTerminate();
     return 0;
@@ -123,9 +127,17 @@ void processInput(GLFWwindow *window) {
             paused = !paused;
             pKeyPressed = true;
         }
-    }
-    else {
+    } else {
         pKeyPressed = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS) {
+        if (!tabKeyPressed) {
+            spawnParticles = true;
+            tabKeyPressed = true;
+        }
+    } else {
+        tabKeyPressed = false;
     }
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -154,8 +166,7 @@ void processInput(GLFWwindow *window) {
             if (camera.getFPSMode()) {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 glfwSetCursorPos(window, SCR_WIDTH / 2, SCR_HEIGHT / 2);
-            }
-            else {
+            } else {
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
             fKeyPressed = true;

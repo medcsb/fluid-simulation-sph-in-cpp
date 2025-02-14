@@ -1,6 +1,6 @@
 #version 330 core
 
-in vec3 vertexColor; // Receive color from vertex shader
+in vec4 vertexColor; // Receive color from vertex shader
 in vec3 vertexNormal;
 in vec3 fragPosition;
 
@@ -13,12 +13,12 @@ void main() {
 
     // Calculate ambient lighting
     float ambientStrength = 0.1;
-    vec3 ambient = ambientStrength * vertexColor;
+    vec3 ambient = ambientStrength * vertexColor.rgb;
     
     // Calculate diffuse lighting
     vec3 lightDir = normalize(lightPos - gl_FragCoord.xyz);  // Direction from fragment to light
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = diff * vertexColor;
+    vec3 diffuse = diff * vertexColor.rgb;
     
     // Combine results
     vec3 result = ambient + diffuse;

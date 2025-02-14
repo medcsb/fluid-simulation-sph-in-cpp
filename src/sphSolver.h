@@ -14,7 +14,7 @@ struct Particle {
     int id;
     float radius;
     Mesh mesh;
-    bool paused = false;
+    bool paused = true;
 
     Particle(std::shared_ptr<ShaderProgram> shaderProgram, glm::vec3 position, float radius, int id) : 
         shaderProgram(shaderProgram),
@@ -26,7 +26,7 @@ struct Particle {
         radius(radius),
         id(id),
         mesh(SPHERE, shaderProgram) {
-            this->mesh.makeSphere(this->position, glm::vec3(0.0f, 0.0f, 1.0f), radius, 36, 18);
+            this->mesh.makeSphere(glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), radius, 36, 18);
         }
 
     void render(float dt){
@@ -61,11 +61,11 @@ struct RigidPlane {
     glm::vec3 position;
     glm::vec3 u;
     glm::vec3 v;
-    glm::vec3 color;
+    glm::vec4 color;
     float size;
     Mesh mesh;
 
-    RigidPlane(std::shared_ptr<ShaderProgram> shaderProgram, glm::vec3 position, glm::vec3 u, glm::vec3 v, glm::vec3 color, float size) : 
+    RigidPlane(std::shared_ptr<ShaderProgram> shaderProgram, glm::vec3 position, glm::vec3 u, glm::vec3 v, glm::vec4 color, float size) : 
         shaderProgram(shaderProgram),
         position(position),
         u(u),
@@ -73,7 +73,8 @@ struct RigidPlane {
         color(color),
         size(size),
         mesh(PLANE, shaderProgram) {
-            this->mesh.makePlane(this->position, this->u, this->v, this->color, this->size);
+            this->mesh.makePlane(this->u, this->v, this->color, this->size);
+            this->mesh.updateModelMatrix(this->position);
         }
     
     void render() {
@@ -81,20 +82,42 @@ struct RigidPlane {
     }
 };
 
+struct RigidPlaneInvisible {
+    glm::vec3 position;
+    glm::vec3 u;
+    glm::vec3 v;
+
+    RigidPlaneInvisible(glm::vec3 position, glm::vec3 u, glm::vec3 v) : 
+        position(position),
+        u(u),
+        v(v) {}
+};
+
 class SPHSolver {
 private :
     bool paused = false;
     std::vector<Particle> *particles;
     RigidPlane Yplane;
+    RigidPlane Backplane;
+    RigidPlane Leftplane;
+    RigidPlane Rightplane;
+    RigidPlaneInvisible Frontplane;
     std::shared_ptr<ShaderProgram> shaderProgram;
 public :
     SPHSolver(std::vector<Particle> *particles, std::shared_ptr<ShaderProgram> shaderProgram) :
         particles(particles),
         shaderProgram(shaderProgram),
-        Yplane(shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 2.0f) {}
+        Yplane(shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f),
+        Backplane(shaderProgram, glm::vec3(0.0f, 1.0f, -1.0f), glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 1.0f),
+        Leftplane(shaderProgram, glm::vec3(-2.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 1.0f),
+        Rightplane(shaderProgram, glm::vec3(2.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 1.0f),
+        Frontplane(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)) {}
     
     void update(float dt) {
         Yplane.render();
+        Backplane.render();
+        Leftplane.render();
+        Rightplane.render();
         for (Particle &particle : *particles) {
             particle.render(dt);
         }
@@ -112,16 +135,40 @@ public :
     }
 
     void handleCollisions(){
-        handleYPlaneCollision();
+        handlePlaneCollision();
         handleParticleCollision();
     }
 
-    void handleYPlaneCollision(){
+    void handlePlaneCollision(){
         for (Particle &particle : *particles) {
             if (particle.position.y < Yplane.position.y + particle.getRadius()) {
                 particle.position.y = Yplane.position.y + particle.getRadius();
                 if (particle.velocity.y < 0) {
                     particle.velocity.y = -particle.velocity.y * 0.5f;
+                }
+            }
+            if (particle.position.z < Backplane.position.z + particle.getRadius()) {
+                particle.position.z = Backplane.position.z + particle.getRadius();
+                if (particle.velocity.z < 0) {
+                    particle.velocity.z = -particle.velocity.z * 0.5f;
+                }
+            }
+            if (particle.position.z > Frontplane.position.z - particle.getRadius()) {
+                particle.position.z = Frontplane.position.z - particle.getRadius();
+                if (particle.velocity.z > 0) {
+                    particle.velocity.z = -particle.velocity.z * 0.5f;
+                }
+            }
+            if (particle.position.x < Leftplane.position.x + particle.getRadius()) {
+                particle.position.x = Leftplane.position.x + particle.getRadius();
+                if (particle.velocity.x < 0) {
+                    particle.velocity.x = -particle.velocity.x * 0.5f;
+                }
+            }
+            if (particle.position.x > Rightplane.position.x - particle.getRadius()) {
+                particle.position.x = Rightplane.position.x - particle.getRadius();
+                if (particle.velocity.x > 0) {
+                    particle.velocity.x = -particle.velocity.x * 0.5f;
                 }
             }
         }
@@ -174,6 +221,17 @@ public :
             particle.unpause();
         }
         paused = false;
+    }
+
+    void spawnParticles() {
+        for (int i = 0; i < 10; i++) {
+            // random number between -1 and 1
+            float x = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1-(-1))));
+            float y = 1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2-1)));
+            float z = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1-(-1))));
+            Particle particle(shaderProgram, glm::vec3(x, y, z), 0.1f, particles->size());
+            particles->push_back(particle);
+        }
     }
 
 };
