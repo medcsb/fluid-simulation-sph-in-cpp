@@ -135,8 +135,8 @@ void Mesh::makeSphere(glm::vec3 position, glm::vec3 color, float radius, int sec
             float y = xy * sin(sectorAngle);
 
             Vertex vertex;
-            vertex.position = glm::vec3(x, y, z) + position;
-            vertex.normal = glm::normalize(vertex.position - position);
+            vertex.position = glm::vec3(x, y, z);
+            vertex.normal = glm::normalize(vertex.position);
             vertex.color = color;
             _vertices.push_back(vertex);
         }
@@ -158,8 +158,6 @@ void Mesh::makeSphere(glm::vec3 position, glm::vec3 color, float radius, int sec
 
     _vbo.setBuffer(_vertices);
     _ebo.setBuffer(_triangleIndices);
-
-    updateModelMatrix(position, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 
     init(_vertices);
 }
@@ -190,6 +188,10 @@ void Mesh::makePlane(glm::vec3 position, glm::vec3 u, glm::vec3 v, glm::vec3 col
     _ebo.setBuffer(_triangleIndices);
 
     init(_vertices);
+
+    _modelMatrix = glm::mat4(1.0);
+
+    updateModelMatrix(position);
 }
 
 
@@ -207,13 +209,9 @@ void Mesh::init(std::vector<Vertex> vertices) {
     _ebo.unbind();
 }
 
-void Mesh::updateModelMatrix(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale) {
+void Mesh::updateModelMatrix(glm::vec3 position) {
     _modelMatrix = glm::mat4(1.0);
     _modelMatrix = glm::translate(_modelMatrix, position);
-    _modelMatrix = glm::rotate(_modelMatrix, glm::radians(rotation.x), glm::vec3(1.0, 0.0, 0.0));
-    _modelMatrix = glm::rotate(_modelMatrix, glm::radians(rotation.y), glm::vec3(0.0, 1.0, 0.0));
-    _modelMatrix = glm::rotate(_modelMatrix, glm::radians(rotation.z), glm::vec3(0.0, 0.0, 1.0));
-    _modelMatrix = glm::scale(_modelMatrix, scale);
 }
 
 void Mesh::render() {

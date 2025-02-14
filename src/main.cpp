@@ -13,11 +13,15 @@
 #include <iostream>
 #include <memory>
 
+bool paused = false;
+bool pKeyPressed = false;
+bool fKeyPressed = false;
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow *window);
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 1.0f, 5.0f));
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -62,11 +66,25 @@ GLFWwindow* initGLFWContext() {
 int main() {
     GLFWwindow* window = initGLFWContext();
     std::shared_ptr<ShaderProgram> shaderProgram = ShaderProgram::genBasicShaderProgram("../src/shaders/vertexShader.glsl", "../src/shaders/fragmentShader.glsl");
-    Particle particle1(shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), 0);
-    Particle particle2(shaderProgram, glm::vec3(0.0f, 0.01f, 0.0f), 1);
-    Particle particle3(shaderProgram, glm::vec3(0.1f, 0.05f, 0.0f), 2);
-    std::vector<Particle> particles = {particle1, particle2, particle3};
+    // create 9x9x9 cube of particles
+    std::vector<Particle> particles;
+    for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 9; j++) {
+            for (int k = 0; k < 9; k++) {
+                Particle particle(shaderProgram, glm::vec3(i * 0.2f, j * 0.2f + 1, k * 0.2f), 0.1f, i * 81 + j * 9 + k);
+                if (i%2 == 0) {
+                    Particle particle(shaderProgram, glm::vec3(i * 0.6f, j * 0.2f + 1, k * 0.2f), 0.1f, i * 81 + j * 9 + k);
+                } else {
+                    Particle particle(shaderProgram, glm::vec3(i * 0.2f, j * 0.2f + 1, k * 0.2f), 0.1f, i * 81 + j * 9 + k);
+                }
+                particles.push_back(particle);
+            }
+        }
+    }
+    Particle particle(shaderProgram, glm::vec3(1.0f, 4.0f, 0.0f), 0.1f, 0);
+    particles.push_back(particle);
     SPHSolver sphSolver(&particles, shaderProgram);
+    Mesh mesh(MeshType::CUBE, shaderProgram);
 
 
     glEnable(GL_DEPTH_TEST);
@@ -84,14 +102,13 @@ int main() {
         shaderProgram->setMat4("view", view);
         shaderProgram->setVec3("lightPos", lightPos);
         shaderProgram->setMat4("projection", projection);
-        //particle.render(0.1f);
-        sphSolver.update(0.1f);
-        for (const auto& particle : particles) {
-            std::cout << "Particle " << particle.id 
-                      << " Matrix translation: " 
-                      << std::endl;
+        if (paused) {
+            sphSolver.pause();
+        } else {
+            sphSolver.unpause();
         }
-        
+        sphSolver.update(0.01f);
+        mesh.render();
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -99,7 +116,18 @@ int main() {
     return 0;
 }
 
+
 void processInput(GLFWwindow *window) {
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+        if (!pKeyPressed) {
+            paused = !paused;
+            pKeyPressed = true;
+        }
+    }
+    else {
+        pKeyPressed = false;
+    }
+
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -121,14 +149,19 @@ void processInput(GLFWwindow *window) {
         camera.processKeyboardInput(DOWN, 0.1f);
     }
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
-        camera.setFPSMode(!camera.getFPSMode());
-        if (camera.getFPSMode()) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            glfwSetCursorPos(window, SCR_WIDTH / 2, SCR_HEIGHT / 2);
+        if (!fKeyPressed) {
+            camera.setFPSMode(!camera.getFPSMode());
+            if (camera.getFPSMode()) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                glfwSetCursorPos(window, SCR_WIDTH / 2, SCR_HEIGHT / 2);
+            }
+            else {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+            fKeyPressed = true;
         }
-        else {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
+    } else {
+        fKeyPressed = false;
     }
 }
 

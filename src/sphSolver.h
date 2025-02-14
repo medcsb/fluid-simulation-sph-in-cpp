@@ -12,16 +12,18 @@ struct Particle {
     float density;
     float pressure;
     int id;
-    float radius = 0.1f;
+    float radius;
     Mesh mesh;
+    bool paused = false;
 
-    Particle(std::shared_ptr<ShaderProgram> shaderProgram, glm::vec3 position, int id) : 
+    Particle(std::shared_ptr<ShaderProgram> shaderProgram, glm::vec3 position, float radius, int id) : 
         shaderProgram(shaderProgram),
         position(position),
         velocity(glm::vec3(0.0f)),
-        acceleration(glm::vec3(0.0f, -0.0001f, 0.0f)),
+        acceleration(glm::vec3(0.0f, -0.1f, 0.0f)),
         density(0.0f),
         pressure(0.0f),
+        radius(radius),
         id(id),
         mesh(SPHERE, shaderProgram) {
             this->mesh.makeSphere(this->position, glm::vec3(0.0f, 0.0f, 1.0f), radius, 36, 18);
@@ -29,10 +31,11 @@ struct Particle {
 
     void render(float dt){
         this->mesh.render();
+        if (paused) {
+            return;
+        }
         this->update(dt);
         this->mesh.updateModelMatrix(this->position);
-        std::cout << "id : " << this->id << std::endl;
-        std::cout << "position : " << this->position.x << " " << this->position.y << " " << this->position.z << std::endl;
     }
 
     void update(float dt){
@@ -42,6 +45,14 @@ struct Particle {
 
     float getRadius(){
         return this->radius;
+    }
+
+    void pause(){
+        this->paused = true;
+    }
+
+    void unpause(){
+        this->paused = false;
     }
 };
 
@@ -72,6 +83,7 @@ struct RigidPlane {
 
 class SPHSolver {
 private :
+    bool paused = false;
     std::vector<Particle> *particles;
     RigidPlane Yplane;
     std::shared_ptr<ShaderProgram> shaderProgram;
@@ -79,7 +91,7 @@ public :
     SPHSolver(std::vector<Particle> *particles, std::shared_ptr<ShaderProgram> shaderProgram) :
         particles(particles),
         shaderProgram(shaderProgram),
-        Yplane(shaderProgram, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 1.0f) {}
+        Yplane(shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 2.0f) {}
     
     void update(float dt) {
         Yplane.render();
@@ -142,6 +154,26 @@ public :
                 }
             }
         }
+    }
+
+    void pause(){
+        if (paused) {
+            return;
+        }
+        for (Particle &particle : *particles) {
+            particle.pause();
+        }
+        paused = true;
+    }
+
+    void unpause(){
+        if (!paused) {
+            return;
+        }
+        for (Particle &particle : *particles) {
+            particle.unpause();
+        }
+        paused = false;
     }
 
 };

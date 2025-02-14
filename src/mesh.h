@@ -34,12 +34,12 @@ public:
 
     void render();
 
-    void updateModelMatrix(glm::vec3 position, glm::vec3 rotation = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f));
+    void updateModelMatrix(glm::vec3 position);
     glm::mat4 getModelMatrix() { return _modelMatrix; }
 
     void makeCube(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f), float size = 1.0f);
     void makeSphere(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f), float radius = 1.0f, int sectorCount = 36, int stackCount = 18);
-    void makePlane(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 u = glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3 v = glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f), float size = 1.0f);
+    void makePlane(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 u = glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3 v = glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3 color = glm::vec3(1.0f, 0.0f, 0.0f), float size = 4.0f);
 
     std::vector<glm::vec3> &vertexPositions() { return _vertexPositions; }
     std::vector<glm::vec3> &vertexNormals() { return _vertexNormals; }
