@@ -62,8 +62,12 @@ GLFWwindow* initGLFWContext() {
 int main() {
     GLFWwindow* window = initGLFWContext();
     std::shared_ptr<ShaderProgram> shaderProgram = ShaderProgram::genBasicShaderProgram("../src/shaders/vertexShader.glsl", "../src/shaders/fragmentShader.glsl");
-    Particle particle(shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), 0);
-    RigidPlane plane(shaderProgram, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 1.0f);
+    Particle particle1(shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), 0);
+    Particle particle2(shaderProgram, glm::vec3(0.0f, 0.01f, 0.0f), 1);
+    Particle particle3(shaderProgram, glm::vec3(0.1f, 0.05f, 0.0f), 2);
+    std::vector<Particle> particles = {particle1, particle2, particle3};
+    SPHSolver sphSolver(&particles, shaderProgram);
+
 
     glEnable(GL_DEPTH_TEST);
 
@@ -80,8 +84,14 @@ int main() {
         shaderProgram->setMat4("view", view);
         shaderProgram->setVec3("lightPos", lightPos);
         shaderProgram->setMat4("projection", projection);
-        plane.render();
-        particle.render(0.1f);
+        //particle.render(0.1f);
+        sphSolver.update(0.1f);
+        for (const auto& particle : particles) {
+            std::cout << "Particle " << particle.id 
+                      << " Matrix translation: " 
+                      << std::endl;
+        }
+        
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -128,6 +138,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
         float lastY = SCR_HEIGHT / 2.0f;
         float xoffset = xpos - lastX;
         float yoffset = lastY - ypos;
+        glfwSetCursorPos(window, SCR_WIDTH / 2, SCR_HEIGHT / 2);
         camera.processMouseInput(xoffset, yoffset);
     }
 }

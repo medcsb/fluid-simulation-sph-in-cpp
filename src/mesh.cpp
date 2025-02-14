@@ -159,6 +159,8 @@ void Mesh::makeSphere(glm::vec3 position, glm::vec3 color, float radius, int sec
     _vbo.setBuffer(_vertices);
     _ebo.setBuffer(_triangleIndices);
 
+    updateModelMatrix(position, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+
     init(_vertices);
 }
 
