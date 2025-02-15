@@ -70,8 +70,8 @@ int main() {
     GLFWwindow* window = initGLFWContext();
     shaderProgram = ShaderProgram::genBasicShaderProgram("../src/shaders/vertexShader.glsl", "../src/shaders/fragmentShader.glsl");
     // create 9x9x9 cube of particles
-    std::vector<Particle> particles;
-    SPHSolver sphSolver(&particles, shaderProgram);
+    std::shared_ptr<std::vector<Particle>> particles = std::make_shared<std::vector<Particle>>();
+    SPHSolver sphSolver(particles, shaderProgram);
     Mesh mesh(MeshType::CUBE, shaderProgram);
     mesh.makeCube(glm::vec3(2.0f, 0.0f, -1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.1f);
 
