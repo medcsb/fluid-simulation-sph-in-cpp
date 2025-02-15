@@ -24,10 +24,11 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow *window);
 
 Camera camera(glm::vec3(0.0f, 1.0f, 5.0f));
+std::shared_ptr<ShaderProgram> shaderProgram;
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
 
 void initGLFW() {
     glfwInit();
@@ -67,19 +68,9 @@ GLFWwindow* initGLFWContext() {
 
 int main() {
     GLFWwindow* window = initGLFWContext();
-    std::shared_ptr<ShaderProgram> shaderProgram = ShaderProgram::genBasicShaderProgram("../src/shaders/vertexShader.glsl", "../src/shaders/fragmentShader.glsl");
+    shaderProgram = ShaderProgram::genBasicShaderProgram("../src/shaders/vertexShader.glsl", "../src/shaders/fragmentShader.glsl");
     // create 9x9x9 cube of particles
     std::vector<Particle> particles;
-    Particle particle1(shaderProgram, glm::vec3(0.0f, 0.0f, 0.0f), 0.1f, 0);
-    Particle particle2(shaderProgram, glm::vec3(0.0f, 1.0f, -1.0f), 0.1f, 0);
-    Particle particle3(shaderProgram, glm::vec3(2.0f, 1.0f, 0.0f), 0.1f, 0);
-    Particle particle4(shaderProgram, glm::vec3(-2.0f, 1.0f, 0.0f), 0.1f, 0);
-    Particle particle5(shaderProgram, glm::vec3(2.0f, 0.0f, -1.0f), 0.1f, 0);
-    particles.push_back(particle1);
-    particles.push_back(particle2);
-    particles.push_back(particle3);
-    particles.push_back(particle4);
-    particles.push_back(particle5);
     SPHSolver sphSolver(&particles, shaderProgram);
     Mesh mesh(MeshType::CUBE, shaderProgram);
     mesh.makeCube(glm::vec3(2.0f, 0.0f, -1.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0.1f);
@@ -190,4 +181,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+    glm::mat4 projection = camera.getProjectionMatrix((float)width / (float)height);
+    shaderProgram->use();
+    shaderProgram->setMat4("projection", projection);
 }

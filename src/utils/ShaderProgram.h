@@ -13,7 +13,6 @@ public:
   ShaderProgram();
   virtual ~ShaderProgram();
 
-
   // Generate a minimal shader program, made of one vertex shader and one fragment shader
   static std::shared_ptr<ShaderProgram> genBasicShaderProgramFromSource(
     const std::string &vertexShaderSource,

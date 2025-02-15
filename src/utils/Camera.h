@@ -40,6 +40,7 @@ private:
     float _movementSpeed;
     float _mouseSensitivity;
     float _fov;
+    float _aspectRatio;
 
     // Private methods
     void updateCameraVectors();
@@ -74,6 +75,8 @@ public:
     // Setters
     void setFPSMode(bool mode) { _fpsMode = mode; }
     void setPosition(const glm::vec3& position) { _position = position; }
+    
+    void setAspectRatio(float aspectRatio) { _aspectRatio = aspectRatio; }
 };
 
 #endif // CAMERA_H

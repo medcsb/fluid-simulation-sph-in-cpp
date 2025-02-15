@@ -10,6 +10,7 @@ project(FLUID_SIMULATION_CPP)
 set(SOURCES
     src/main.cpp  # Adjust the path if needed
     src/mesh.cpp
+    src/sphSolver.cpp
     src/utils/ShaderProgram.cpp
     src/utils/util.cpp
     src/utils/Camera.cpp
