@@ -21,9 +21,9 @@ private :
     Grid grid;
     unsigned int particleCount = 0;
     float restDensity = 1000.0f;
-    float gasConstant = 2000.0f;
-    float viscosity = 0.001f;
-    float smoothingLength = 2 * Particle::Radius();
+    float gasConstant = 0.5f;
+    float viscosityConstant = 1.04f;
+    float smoothingLength = 1.5 * Particle::Radius();
 public :
     SPHSolver(std::shared_ptr<std::vector<Particle>> particles, std::shared_ptr<ShaderProgram> shaderProgram);
     
@@ -43,8 +43,9 @@ public :
     void pause();
 
     float Wpoly6Kernel(float r);
-    glm::vec3 SpikyGradientKernel(glm::vec3 r);
-    float ViscosityLaplacianKernel(float r);
+    float WspikyKernel(float r);
+    glm::vec3 GradientSpikyKernel(glm::vec3 rij, float distance);
+    float LaplacianViscosityKernel(float r);
 };
 
 #endif // SPHSOLVER_H

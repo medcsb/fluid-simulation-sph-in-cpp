@@ -17,50 +17,13 @@ void SPHSolver::update(float dt) {
     Backplane.render();
     Leftplane.render();
     Rightplane.render();
-    handleCollisions();
     for (Particle &particle : *particles) {
         particle.render(dt);
         grid.recomputeParticleIndex(particle.id, particle.getGridIndex());
     }
+    handleCollisions();
     
     //populateGrid();
-}
-
-void SPHSolver::computeDensityPressure(int particleIndex, std::vector<int> &neighbours) {
-    Particle &particle = (*particles)[particleIndex];
-    particle.density = 0.0f;
-    for (int i = 0; i < neighbours.size(); i++) {
-        if (neighbours[i] == particleIndex) {
-            continue;
-        }
-        Particle &neighbour = (*particles)[neighbours[i]];
-        glm::vec3 distance = particle.position - neighbour.position;
-        float distanceLength = glm::length(distance);
-        if (distanceLength < smoothingLength) {
-            particle.density += neighbour.mass * Wpoly6Kernel(distanceLength);
-        }
-    }
-    particle.pressure = gasConstant * (particle.density - restDensity);
-}
-
-void SPHSolver::computePressureAndViscosityForces(int particleIndex, std::vector<int> &neighbours) {
-    Particle &particle = (*particles)[particleIndex];
-    glm::vec3 pressureForce = glm::vec3(0.0f);
-    glm::vec3 viscosityForce = glm::vec3(0.0f);
-    for (int i = 0; i < neighbours.size(); i++) {
-        if (neighbours[i] == particleIndex) {
-            continue;
-        }
-        Particle &neighbour = (*particles)[neighbours[i]];
-        glm::vec3 distance = particle.position - neighbour.position;
-        float distanceLength = glm::length(distance);
-        if (distanceLength < smoothingLength) {
-            glm::vec3 gradient = distance / distanceLength;
-            pressureForce += -neighbour.mass * (particle.pressure + neighbour.pressure) / (2 * neighbour.density) * gradient * SpikyGradientKernel(particle.position - neighbour.position);
-            viscosityForce += viscosity * neighbour.mass * (neighbour.velocity - particle.velocity) / neighbour.density * ViscosityLaplacianKernel(distanceLength);
-        }
-    }
-    particle.acceleration = pressureForce / particle.density + viscosityForce / particle.density + glm::vec3(0.0f, -9.8f, 0.0f);
 }
 
 void SPHSolver::addParticle(Particle particle) {
@@ -130,40 +93,85 @@ void SPHSolver::handleParticleCollision() {
     }
 }
 
+void SPHSolver::computeDensityPressure(int particleIndex, std::vector<int> &neighbours) {
+    Particle &particle = (*particles)[particleIndex];
+    particle.density = 0.0f;
+    for (int i = 0; i < neighbours.size(); i++) {
+        if (neighbours[i] == particleIndex) {
+            continue;
+        }
+        Particle &neighbour = (*particles)[neighbours[i]];
+        glm::vec3 distance = particle.position - neighbour.position;
+        float distanceLength = glm::length(distance);
+        if (distanceLength < smoothingLength) {
+            particle.density += neighbour.mass * WspikyKernel(distanceLength);
+        }
+    }
+    particle.pressure = glm::max(0.0f, gasConstant * (particle.density - restDensity));
+}
+
+float SPHSolver::Wpoly6Kernel(float r) {
+    return 315.0f / (64.0f * M_PI * pow(smoothingLength, 9)) * pow(pow(smoothingLength, 2) - pow(r, 2), 3);
+}
+
+void SPHSolver::computePressureAndViscosityForces(int particleIndex, std::vector<int> &neighbours) {
+    Particle &particle = (*particles)[particleIndex];
+    glm::vec3 pressureForce = glm::vec3(0.0f);
+    glm::vec3 viscosityForce = glm::vec3(0.0f);
+    for (int i = 0; i < neighbours.size(); i++) {
+        if (neighbours[i] == particleIndex) {
+            continue;
+        }
+        Particle &neighbour = (*particles)[neighbours[i]];
+        glm::vec3 rij = particle.position - neighbour.position;
+        float distance = glm::length(rij);
+        if (distance == 0) {
+            // make the pressure force go in a random direction by adding a small random value to each component
+            pressureForce += glm::vec3(rand() % 100 / 1000.0f, rand() % 100 / 1000.0f, rand() % 100 / 1000.0f);
+            continue;
+        }
+        if (neighbour.density == 0) {
+            continue;
+        }
+        if (distance < smoothingLength) {
+            pressureForce += - (neighbour.mass / neighbour.density) * ((particle.pressure + neighbour.pressure) / 2) * GradientSpikyKernel(rij, distance);
+            viscosityForce +=  viscosityConstant * (neighbour.mass * (particle.velocity - neighbour.velocity) / neighbour.density) * LaplacianViscosityKernel(distance);
+        }
+    }
+    particle.acceleration = (pressureForce) / particle.mass + glm::vec3(0.0f, -9.81f, 0.0f);
+}
+
+glm::vec3 SPHSolver::GradientSpikyKernel(glm::vec3 rij, float distance) {
+    return static_cast<float>(-45.0f / (M_PI * pow(smoothingLength, 6)) * pow(smoothingLength - distance, 2)) * (rij / distance);
+}
+
+float SPHSolver::WspikyKernel(float r) {
+    return 15.0f / (M_PI * pow(smoothingLength, 6)) * pow(smoothingLength - r, 3);
+}
+
+float SPHSolver::LaplacianViscosityKernel(float r) {
+    return 45.0f / (M_PI * pow(smoothingLength, 6)) * (smoothingLength - r);
+}
+
 void SPHSolver::spawnParticles() {
     for (int i = 0; i < 100; i++) {
         // random number between -1 and 1
         float x = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1-(-1))));
         float y = 1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2-1)));
         float z = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1-(-1))));
-        Particle particle(shaderProgram, glm::vec3(x, y, z), 0.05f, particleCount);
+        Particle particle(shaderProgram, glm::vec3(x, y, z), 0.1f, particleCount);
         particleCount++;
         particles->push_back(particle);
     }
-    int size = particles->size();
-}
-
-float SPHSolver::Wpoly6Kernel(float r) {
-    if (r >= 0 && r <= smoothingLength) {
-        return 315.0f / (64.0f * M_PI * pow(smoothingLength, 9)) * pow(pow(smoothingLength, 2) - pow(r, 2), 3);
-    }
-    return 0.0f;
-}
-
-glm::vec3 SPHSolver::SpikyGradientKernel(glm::vec3 r) {
-    float rLength = glm::length(r);
-    if (rLength >= 0 && rLength <= smoothingLength) {
-        float scalar = -45.0f / (M_PI * pow(smoothingLength, 6)) * pow(smoothingLength - rLength, 2);
-        return static_cast<float>(scalar/rLength) * r;
-    }
-    return glm::vec3(0.0f);
-}
-
-float SPHSolver::ViscosityLaplacianKernel(float r) {
-    if (r >= 0 && r <= smoothingLength) {
-        return 45.0f / (M_PI * pow(smoothingLength, 6)) * (smoothingLength - r);
-    }
-    return 0.0f;
+    //Particle particle(shaderProgram, glm::vec3(0.0f, 1.0f, 0.0f), 0.1f, particleCount);
+    //particleCount++;
+    //Particle particle2(shaderProgram, glm::vec3(0.0f, 1.0f, 0.0f), 0.1f, particleCount);
+    //particleCount++;
+    //Particle particle3(shaderProgram, glm::vec3(0.0f, 1.0f, 0.1f), 0.1f, particleCount);
+    //particleCount++;
+    //particles->push_back(particle);
+    //particles->push_back(particle2);
+    //particles->push_back(particle3);
 }
 
 void SPHSolver::pause() {

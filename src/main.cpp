@@ -13,7 +13,7 @@
 #include <iostream>
 #include <memory>
 
-bool paused = true;
+bool paused = false;
 bool spawnParticles = false;
 bool pKeyPressed = false;
 bool fKeyPressed = false;
