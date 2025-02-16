@@ -20,6 +20,7 @@ struct Grid {
     float Height;
     float size;
     std::shared_ptr<std::vector<Particle>> particles;
+    std::vector<std::array<int, 26>> neighbours;
 
     std::vector<std::vector<int>>* getGrid() {
         return &grid;
@@ -45,10 +46,19 @@ struct Grid {
         num_cells_x = Width / size;
         num_cells_y = Height / size;
         num_cells_z = Depth / size;
-        if (particles->empty()) {
-            return;
-        }
         populateGrid();
+        precomputeNeighbours();
+    }
+
+    void precomputeNeighbours() {
+        neighbours.reserve(num_cells_x * num_cells_y * num_cells_z);
+        for (int i = 0; i < num_cells_x * num_cells_y * num_cells_z; i++) {
+            neighbours.push_back(getIndexOfNeighbouringGrids(i));
+        }
+    }
+
+    std::array<int, 26> getNeighbours(int index) {
+        return neighbours[index];
     }
 
     void recomputeParticleIndex(int particle_id, int index) {
@@ -101,9 +111,7 @@ struct Grid {
         if (particles->size() == 0) {
             return;
         }
-
-
-        int sizeofparticles = particles->size();
+        
 
         for (Particle &particle : *particles) {
             float r = Particle::Radius();

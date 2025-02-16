@@ -101,7 +101,7 @@ int main() {
         if (spawnParticles){
             sphSolver.spawnParticles();
         }
-        sphSolver.update(0.01f);
+        sphSolver.update(0.001f);
         //mesh.render();
         glfwSwapBuffers(window);
         glfwPollEvents();

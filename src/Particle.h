@@ -11,6 +11,7 @@ struct Particle {
     glm::vec3 acceleration;
     float density;
     float pressure;
+    float mass = 0.5f;
     int id;
     float radius;
     Mesh mesh;
@@ -25,7 +26,7 @@ struct Particle {
         shaderProgram(shaderProgram),
         position(position),
         velocity(glm::vec3(0.0f)),
-        acceleration(glm::vec3(0.0f, -9.8f, 0.0f)),
+        acceleration(glm::vec3(0.0f, 0.0f, 0.0f)),
         density(0.0f),
         pressure(0.0f),
         radius(radius),
