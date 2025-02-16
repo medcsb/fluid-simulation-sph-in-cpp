@@ -20,10 +20,12 @@ private :
     std::shared_ptr<ShaderProgram> shaderProgram;
     Grid grid;
     unsigned int particleCount = 0;
-    float restDensity = 1000.0f;
-    float gasConstant = 0.5f;
-    float viscosityConstant = 1.04f;
-    float smoothingLength = 1.5 * Particle::Radius();
+    float restDensity = 630.0f;
+    float gasConstant = 288.0f;
+    float nearGasConstant = 2.15f;
+    float collisionDamping = 0.95f;
+    float viscosityConstant = 0.00001f;
+    float smoothingLength = 2.0f * Particle::Radius();
 public :
     SPHSolver(std::shared_ptr<std::vector<Particle>> particles, std::shared_ptr<ShaderProgram> shaderProgram);
     

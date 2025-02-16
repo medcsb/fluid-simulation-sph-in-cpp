@@ -127,7 +127,6 @@ void SPHSolver::computePressureAndViscosityForces(int particleIndex, std::vector
         float distance = glm::length(rij);
         if (distance == 0) {
             // make the pressure force go in a random direction by adding a small random value to each component
-            pressureForce += glm::vec3(rand() % 100 / 1000.0f, rand() % 100 / 1000.0f, rand() % 100 / 1000.0f);
             continue;
         }
         if (neighbour.density == 0) {
@@ -138,7 +137,11 @@ void SPHSolver::computePressureAndViscosityForces(int particleIndex, std::vector
             viscosityForce +=  viscosityConstant * (neighbour.mass * (particle.velocity - neighbour.velocity) / neighbour.density) * LaplacianViscosityKernel(distance);
         }
     }
-    particle.acceleration = (pressureForce) / particle.mass + glm::vec3(0.0f, -9.81f, 0.0f);
+    particle.acceleration = glm::vec3(0.0f, -9.81f, 0.0f);
+    if (particle.density == 0) {
+        return;
+    }
+    particle.acceleration += (pressureForce) / particle.density;
 }
 
 glm::vec3 SPHSolver::GradientSpikyKernel(glm::vec3 rij, float distance) {
@@ -156,12 +159,12 @@ float SPHSolver::LaplacianViscosityKernel(float r) {
 void SPHSolver::spawnParticles() {
     for (int i = 0; i < 100; i++) {
         // random number between -1 and 1
-        float x = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1-(-1))));
-        float y = 1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2-1)));
-        float z = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1-(-1))));
-        Particle particle(shaderProgram, glm::vec3(x, y, z), 0.1f, particleCount);
-        particleCount++;
-        particles->push_back(particle);
+        //float x = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1-(-1))));
+        //float y = 1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(2-1)));
+        //float z = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1-(-1))));
+        //Particle particle(shaderProgram, glm::vec3(x, y, z), 0.1f, particleCount);
+        //particleCount++;
+        //particles->push_back(particle);
     }
     //Particle particle(shaderProgram, glm::vec3(0.0f, 1.0f, 0.0f), 0.1f, particleCount);
     //particleCount++;
@@ -172,6 +175,16 @@ void SPHSolver::spawnParticles() {
     //particles->push_back(particle);
     //particles->push_back(particle2);
     //particles->push_back(particle3);
+
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            for (int k = 0; k < 5; k++) {
+                Particle particle(shaderProgram, glm::vec3(i * 2 * Particle::Radius(), 1.0f + j * 2 * Particle::Radius(), -1.0f + k * 2 * Particle::Radius()), 0.1f, particleCount);
+                particleCount++;
+                particles->push_back(particle);
+            }
+        }
+    }
 }
 
 void SPHSolver::pause() {
