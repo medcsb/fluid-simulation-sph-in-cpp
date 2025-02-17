@@ -9,10 +9,9 @@ struct Particle {
     glm::vec3 position;
     glm::vec3 velocity;
     glm::vec3 acceleration;
-    float maxVelocity = 10.0f;
     float density;
     float pressure;
-    float mass = 3.0f / 4.0f * M_PI * pow(0.1f, 3) * 1000.0f;
+    float mass;
     int id;
     float radius;
     Mesh mesh;
@@ -27,7 +26,7 @@ struct Particle {
         shaderProgram(shaderProgram),
         position(position),
         velocity(glm::vec3(0.0f)),
-        acceleration(glm::vec3(0.0f, 0.0f, 0.0f)),
+        acceleration(glm::vec3(0.0f, -9.8f, 0.0f)),
         density(0.0f),
         pressure(0.0f),
         radius(radius),
@@ -54,12 +53,6 @@ struct Particle {
     }
 
     void update(float dt){
-        // clamp velocity
-        if (glm::length(this->velocity) > this->maxVelocity) {
-            this->velocity = glm::normalize(this->velocity) * this->maxVelocity;
-            this->position += this->velocity * dt;
-            return;
-        }
         this->velocity += this->acceleration * dt;
         this->position += this->velocity * dt;
     }

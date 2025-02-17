@@ -82,8 +82,14 @@ int main() {
 
     glm::mat4 model = glm::mat4(1.0f);
     glm::vec3 lightPos(0.0f, 2.0f, 1.0f);
+
+    float currentTime = 0.0f;
+    float lastTime = 0.0f;
+    float deltaTime = 0.0f;
     
     while (!glfwWindowShouldClose(window)) {
+        currentTime = glfwGetTime();
+        deltaTime = currentTime - lastTime;
         processInput(window);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -101,7 +107,9 @@ int main() {
         if (spawnParticles){
             sphSolver.spawnParticles();
         }
-        sphSolver.update(0.001f);
+        sphSolver.update(0.01f);
+        std::cout << "FPS: " << 1.0f / deltaTime << std::endl;
+        lastTime = currentTime;
         //mesh.render();
         glfwSwapBuffers(window);
         glfwPollEvents();
